@@ -1,7 +1,4 @@
 dist
 build
-
 node_modules
-
 .env
-typings
