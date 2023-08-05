@@ -1,29 +1,50 @@
 {
   "name": "discord-js-bot",
   "version": "1.0.0",
-  "type": "module",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "start": "concurrently \"tsc -w\" \"nodemon build/index.js\""
-  },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^18.15.11",
-    "@typescript-eslint/eslint-plugin": "^5.58.0",
-    "@typescript-eslint/parser": "^5.58.0",
-    "eslint": "^8.38.0",
-    "nodemon": "^2.0.22",
-    "prettier": "^2.8.7",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.0.4"
+  "homepage": "https://github.com/constanedes/#readme",
+  "bugs": {
+    "url": "https://github.com/constanedes/discord-js-bot/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/constanedes/discord-js-bot.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Constantino Edes",
+    "email": "constantinoedes@gmail.com",
+    "url": "https://www.constantinoedes.dev"
+  },
+  "type": "module",
+  "main": "./build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "concurrently \"tsc -w\" \"nodemon ./dist/src/index.js\"",
+    "format": "rome format src --write",
+    "prepare": "git config --local core.hooksPath .githooks || echo 'Can not set git hooks'",
+    "prestart": "pnpm install",
+    "start": "node ./dist/src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "discord.js": "^14.9.0",
-    "dotenv": "^16.0.3"
+    "discord.js": "^14.12.1",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.4.7",
+    "@typescript-eslint/eslint-plugin": "6.2.1",
+    "@typescript-eslint/parser": "6.2.1",
+    "concurrently": "8.2.0",
+    "dotenv": "^16.3.1",
+    "eslint": "8.46.0",
+    "nodemon": "3.0.1",
+    "prettier": "3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "5.1.6"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }
