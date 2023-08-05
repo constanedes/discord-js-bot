@@ -1,9 +1,13 @@
-import { config } from "dotenv";
-import { resolve } from "node:path";
-import { envVariables } from "./consts.js";
+import client from "./client/index.js";
+import { ENV } from "./consts.js";
 
+function main() {
+    client.login(ENV.DISCORD_TOKEN);
+    console.log("Running...");
+}
 
-const ENV_FILE = ".env";
-config({ path: resolve(process.cwd(), ENV_FILE) });
-
-console.log(process.env.DISCORD_TOKEN);
+try {
+    main();
+} catch (error) {
+    console.log(error);
+}

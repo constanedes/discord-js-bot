@@ -1,17 +1,26 @@
-import { z } from 'zod'
-import { IConfiguration } from './IConfiguration.js'
+import { z } from "zod";
+import { IConfiguration } from "./IConfiguration.js";
+import { config } from "dotenv";
+import { resolve } from "path";
 
 const envSchema = z.object({
-    NODE_ENV: z.union([z.literal('development'), z.literal('production')]).optional(),
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DISCORD_TOKEN: z.string(),
-})
+});
 
-export const envVariables: IConfiguration = envSchema.parse(process.env)
+config({ path: resolve(process.cwd(), ".env") });
 
-declare global {
-    namespace NodeJS {
-        // rome-ignore lint/suspicious/noEmptyInterface: <explanation>
-        interface  ProcessEnv extends z.infer<typeof envSchema> {}
-    }
+export const getEnvIssues = (): z.ZodIssue[] | void => {
+    const result = envSchema.safeParse(process.env);
+    if (!result.success) return result.error.issues;
+};
+
+const issues = getEnvIssues();
+if (issues) {
+    console.error("Invalid environment variables, check the errors below!");
+    console.error(issues);
+    process.exit(-1);
 }
 
+export const ENV:IConfiguration = envSchema.parse(process.env)
+console.log("The environment variables are valid!");
