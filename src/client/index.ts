@@ -1,6 +1,13 @@
-import { Client, IntentsBitField } from "discord.js";
+import { Client, ClientOptions, IntentsBitField } from "discord.js";
 
-const client = new Client({
+export class CustomClient extends Client {
+    // rome-ignore lint/complexity/noUselessConstructor: <explanation>
+    constructor(options: ClientOptions) {
+        super(options);
+    }
+}
+
+const client = new CustomClient({
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMembers,
