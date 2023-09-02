@@ -1,0 +1,23 @@
+{
+    "material-icon-theme.folders.associations": {
+        "deprecated": "Archive",
+        "development":"Test",
+        "production":"Dist",
+        "staff": "Admin",
+        "protection": "Guard",
+        "systems":"Ci",
+        "discord": "Client"
+    },
+    "material-icon-theme.files.associations": {
+        "config.json": "Raml",
+        "settings.json": "Raml"
+    },
+    "workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#5865F2",
+        "titleBar.border": "#eaeaea",
+        "titleBar.inactiveBackground": "#5865F2",
+        "titleBar.activeForeground": "#ebe8e8",
+        "statusBar.background": "#7C21D7",
+        "statusBar.foreground": "#eaeaea"
+    }
+}
