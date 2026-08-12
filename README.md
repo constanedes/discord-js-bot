@@ -1,35 +1,35 @@
 # Discord.js Bot
 
-Bot generalista de Discord construido con TypeScript, Node.js y discord.js 14.27. Es la reescritura en TypeScript de [discord-py-bot](https://github.com/constanedes/discord-py-bot), con la misma funcionalidad y arquitectura modular.
+A general purpose Discord bot built with TypeScript, Node.js and discord.js 14.27. It is the TypeScript rewrite of [discord-py-bot](https://github.com/constanedes/discord-py-bot) with the same functionality and modular architecture.
 
-## Características
+## Features
 
-- Arquitectura modular: cada módulo vive en `src/commands/` y exporta sus comandos.
-- Comandos híbridos: cada comando funciona como slash command (`/ping`) y con prefijo (`!ping`).
-- Datos de criptomonedas desde la API pública de CoinGecko, sin API key.
-- Reproducción de audio con `@discordjs/voice` y `play-dl` (requiere FFmpeg en el `PATH`).
-- Moderación: `clear`, `kick` y `ban` con verificación de permisos.
-- Formato y linting con Oxc (`oxfmt` + `oxlint`).
+- Modular architecture: every module lives in `src/commands/` and exports its commands.
+- Hybrid commands: every command works both as a slash command (`/ping`) and with a prefix (`!ping`).
+- Cryptocurrency data from the public CoinGecko API, no API key required.
+- Audio playback with `@discordjs/voice` and `play-dl` (requires FFmpeg in `PATH`).
+- Moderation: `clear`, `kick` and `ban` with permission checks.
+- Formatting and linting with Oxc (`oxfmt` + `oxlint`).
 
-## Estructura
+## Structure
 
-Los comandos y eventos se cargan automáticamente: cada archivo dentro de `src/commands/<módulo>/` exporta un `Command` y la carpeta define la categoría. Cada archivo en `src/events/` exporta un `Event`.
+Commands and events are loaded automatically: every file inside `src/commands/<module>/` exports a `Command` and the folder defines the category. Every file in `src/events/` exports an `Event`.
 
 ```
 src/
 ├── index.ts                  # Entry point
-├── config.ts                 # Configuración validada con Zod desde .env
+├── config.ts                 # Settings validated with Zod from .env
 ├── base/
-│   ├── Command.ts            # Clase Command (opciones declarativas, getters slash+prefijo)
-│   ├── Event.ts              # Clase Event
-│   └── Component.ts          # Clase Component (buttons, selects, modals)
+│   ├── Command.ts            # Command class (declarative options, slash+prefix getters)
+│   ├── Event.ts              # Event class
+│   └── Component.ts          # Component class (buttons, selects, modals)
 ├── client/
-│   └── ExtendedClient.ts     # Autodiscovery de comandos, eventos y componentes
+│   └── ExtendedClient.ts     # Autodiscovery of commands, events and components
 ├── events/                   # ready, interactionCreate, messageCreate, guildMemberAdd/Remove
 ├── utils/
 │   ├── http.ts               # fetch -> JSON
-│   ├── voice.ts              # Sesiones de voz por guild
-│   └── coingecko.ts          # Cliente CoinGecko
+│   ├── voice.ts              # Voice sessions per guild
+│   └── coingecko.ts          # CoinGecko client
 └── commands/
     ├── general/              # ping, help, info, flip, joke, meme, say, hello
     ├── finances/             # price, coin (CoinGecko)
@@ -38,7 +38,7 @@ src/
     └── development/          # sync, shutdown (owner only)
 ```
 
-Para crear un comando nuevo basta con agregar un archivo:
+To create a new command you only need to add a file:
 
 ```ts
 // src/commands/general/example.ts
@@ -51,58 +51,58 @@ export default new Command({
 });
 ```
 
-Los componentes se declaran junto al comando (ver `src/commands/general/hello.ts`) y se registran solos al cargar.
+Components are declared alongside the command (see `src/commands/general/hello.ts`) and are registered automatically when it loads.
 
-## Uso
+## Usage
 
-Requiere Node.js 22+.
+Requires Node.js 22+.
 
 ```sh
 pnpm install
-cp .env.example .env   # configurar BOT_TOKEN
+cp .env.example .env   # set BOT_TOKEN
 pnpm dev
 ```
 
-`DEV_GUILD_ID` sincroniza los comandos instantáneamente en un servidor durante desarrollo. Sin esa variable se registran globalmente.
+`DEV_GUILD_ID` syncs commands instantly on a server during development. Without it they are registered globally.
 
-## Comandos
+## Commands
 
-Cada comando funciona con `!comando` o `/comando`.
+Every command works with `!command` or `/command`.
 
-| Comando                            | Descripción                                     |
-| ---------------------------------- | ----------------------------------------------- |
-| **General**                        |                                                 |
-| `/ping`                            | Latencia del bot                                |
-| `/help`                            | Muestra todos los comandos agrupados por módulo |
-| `/info`                            | Información del servidor                        |
-| `/flip`                            | Lanza una moneda                                |
-| `/joke`                            | Chiste aleatorio                                |
-| `/meme`                            | Meme aleatorio                                  |
-| `/say <mensaje>`                   | Hace que el bot repita un mensaje               |
-| **Finanzas**                       |                                                 |
-| `/price [crypto] [fiat] [changes]` | Precio de una cripto (default `BTC` en `USD`)   |
-| `/coin [crypto]`                   | Información detallada de una criptomoneda       |
-| **Moderación**                     |                                                 |
-| `/clear [cantidad]`                | Borra mensajes (default 5, máx 100)             |
-| `/kick <miembro> [razón]`          | Expulsa a un miembro                            |
-| `/ban <miembro> [razón]`           | Banea a un miembro                              |
-| **Multimedia**                     |                                                 |
-| `/join`                            | Se une a tu canal de voz                        |
-| `/leave`                           | Sale del canal de voz                           |
-| `/play <url>`                      | Reproduce audio desde una URL                   |
-| `/ps` `/rs` `/st`                  | Pausa / reanuda / detiene la música             |
-| `/skip`                            | Salta la pista actual                           |
-| `/yt <búsqueda>`                   | Busca en YouTube y devuelve el primer resultado |
-| **Desarrollo (owner only)**        |                                                 |
-| `/sync`                            | Sincroniza los slash commands con Discord       |
-| `/shutdown`                        | Apaga el bot                                    |
+| Command                            | Description                                  |
+| ---------------------------------- | -------------------------------------------- |
+| **General**                        |                                              |
+| `/ping`                            | Shows the bot latency                        |
+| `/help`                            | Shows all commands grouped by module         |
+| `/info`                            | Server information                           |
+| `/flip`                            | Flips a coin                                 |
+| `/joke`                            | Gets a random joke                           |
+| `/meme`                            | Gets a random meme                           |
+| `/say <message>`                   | Makes the bot repeat a message               |
+| **Finances**                       |                                              |
+| `/price [crypto] [fiat] [changes]` | Crypto price (default `BTC` in `USD`)        |
+| `/coin [crypto]`                   | Detailed cryptocurrency information          |
+| **Moderation**                     |                                              |
+| `/clear [amount]`                  | Deletes messages (default 5, max 100)        |
+| `/kick <member> [reason]`          | Kicks a member                               |
+| `/ban <member> [reason]`           | Bans a member                                |
+| **Multimedia**                     |                                              |
+| `/join`                            | Joins your voice channel                     |
+| `/leave`                           | Leaves the voice channel                     |
+| `/play <url>`                      | Plays audio from a URL                       |
+| `/ps` `/rs` `/st`                  | Pauses / resumes / stops music               |
+| `/skip`                            | Skips the current track                      |
+| `/yt <query>`                      | Searches YouTube and returns the first result|
+| **Development (owner only)**       |                                              |
+| `/sync`                            | Syncs slash commands with Discord            |
+| `/shutdown`                        | Shuts the bot down                           |
 
-## Calidad
+## Quality
 
 ```sh
 pnpm check         # typecheck (tsc --noEmit)
 pnpm lint          # oxlint
-pnpm format        # oxfmt --write (4 espacios)
-pnpm format:check  # verificar formato
-pnpm build         # compilar a dist/
+pnpm format        # oxfmt --write (4 spaces)
+pnpm format:check  # verify formatting
+pnpm build         # compile to dist/
 ```
