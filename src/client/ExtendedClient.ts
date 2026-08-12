@@ -1,246 +1,107 @@
-import { ActivityType, Client, Collection, IntentsBitField, Interaction, Partials } from "discord.js";
-import path, { join } from "path";
-import fs from "fs";
+import { readdirSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { Client, Collection, GatewayIntentBits, Partials } from "discord.js";
 import { Command } from "../base/Command.js";
+import { Component } from "../base/Component.js";
+import { Event } from "../base/Event.js";
+import { config } from "../config.js";
 
-export default class ExtendedClient extends Client {
-    commands: Collection<unknown, unknown> | undefined;
+export class ExtendedClient extends Client {
+    readonly commands = new Collection<string, Command>();
+    readonly buttons = new Collection<string, Component>();
+    readonly selects = new Collection<string, Component>();
+    readonly modals = new Collection<string, Component>();
 
     constructor() {
         super({
             intents: [
-                IntentsBitField.Flags.Guilds,
-                IntentsBitField.Flags.GuildMembers,
-                IntentsBitField.Flags.GuildMessages,
-                IntentsBitField.Flags.MessageContent,
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMembers,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.MessageContent,
+                GatewayIntentBits.GuildVoiceStates,
             ],
-            partials: [
-                Partials.Channel,
-                Partials.GuildMember,
-                Partials.Message,
-                Partials.User,
-                Partials.ThreadMember,
-                Partials.Reaction,
-                Partials.GuildScheduledEvent,
-            ],
-
-            presence: { activities: [{ name: "AFK | !help", type: ActivityType.Playing }], status: "idle", afk: true },
+            partials: [Partials.Channel],
         });
     }
 
-    public async start() {
-        //await this.loadEvents();
-        // await this.loadComponents(); // TODO uncoment
-        //await this.loadCommands();
-
-        this.login(process.env.BOT_TOKEN);
-        this.on("interactionCreate", this.addListeners);
-        this.once("ready", this.onReady);
+    async start(): Promise<void> {
+        await this.loadCommands();
+        await this.loadEvents();
+        await this.login(config.token);
     }
-    private addListeners(interaction: Interaction) {
-        //if (interaction.isCommand()) this.onCommand(interaction);
-        //if (interaction.isAutocomplete()) this.onAutoComplete(interaction);
-    }
-    
-    /* 
-    private async onCommand(commandInteraction: CommandInteraction){
-        const command = this.Commands.get(commandInteraction.commandName);
-        const client = this as ExtendedClient;
 
-        switch(command?.type){
-            case ApplicationCommandType.ChatInput:{
-                const interaction = commandInteraction as ChatInputCommandInteraction;
-                command.run({ interaction, client });
-                return;
-            }
-            case ApplicationCommandType.Message:{
-                const interaction = commandInteraction as MessageContextMenuCommandInteraction;
-                command.run({ interaction, client });
-                return;
-            }
-            case ApplicationCommandType.User:{
-                const interaction = commandInteraction as UserContextMenuCommandInteraction;
-                command.run({ interaction, client });
-                return;
-            }
-        }
-
-    } */
-
-    //* Delete
-    private async onReady(): Promise<void> {
-        this.commands = new Collection();
-
-        const commandsPath = path.join(__dirname, "commands");
-        const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith(".js"));
-
-        for (const file of commandFiles) {
-            const filePath = path.join(commandsPath, file);
-            try {
-                const { default: command } = await import(filePath);
-                if ("data" in command && "execute" in command) {
-                    this.commands.set(command.data.name, command);
-                } else {
-                    console.log(
-                        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
-                    );
-                }
-            } catch (error) {
-                console.error(`Error loading command from ${filePath}: ${error}`);
-            }
-        }
-    }
-    /*
-    private async loadCommands() {
-        const commandsDir = join(__dirname, "../commands");
-        const paths = await getFiles(commandsDir);
-
-        const messages: string[] = [ck.bgBlue(" Commands ")];
-
-        for (const path of paths) {
-            const { default: command } = await import(join(commandsDir, path));
-            if (!(command instanceof Command)) {
-                messages.push(ck.italic.yellow(`! "${path}" file is not exporting a`, ck.green("Command")));
+    /** Discovers every command under src/commands; the parent folder becomes the category. */
+    private async loadCommands(): Promise<void> {
+        for (const file of walk(resolveModuleDir("commands"))) {
+            const module = await importDefault(file);
+            if (!(module instanceof Command)) {
+                console.warn(`Skipping ${file}: it does not export a Command`);
                 continue;
             }
-
-            this.Commands.set(command.data.name, command.data);
-            messages.push(
-                `${ck.green("✓")} ${ck.blue.underline(path)} ${ck.green(`registered as ${ck.cyan(command.data.name)}`)}`
-            );
-
-            if (command.data.components) {
-                command.data.components.forEach((c) => this.saveComponent(c));
-            }
+            module.category = capitalize(basename(dirname(file)));
+            this.commands.set(module.data.name, module);
+            for (const component of module.components) this.registerComponent(component);
         }
-        console.log(messages.join("\n"));
+        console.log(`Loaded ${this.commands.size} commands`);
     }
 
-    
-    private async loadEvents() {
-        const eventsDir = join(__dirname, "../events");
-        const paths = await getFiles(eventsDir);
-
-        const messages: string[] = [ck.bgYellow.black(" Events ")];
-
-        for (const path of paths) {
-            const { default: event } = await import(join(eventsDir, path));
-            if (!(event instanceof Event)) {
-                messages.push(ck.italic.yellow(`! "${path}" file is not exporting a`, ck.green("Event")));
+    private async loadEvents(): Promise<void> {
+        for (const file of walk(resolveModuleDir("events"))) {
+            const module = await importDefault(file);
+            if (!(module instanceof Event)) {
+                console.warn(`Skipping ${file}: it does not export an Event`);
                 continue;
             }
-            const client = this as ExtendedClient<true>;
-            const { name, run, once } = event.data;
-            if (once) {
-                this.once(name, (...args) => run(client, ...args));
-            } else {
-                this.on(name, (...args) => run(client, ...args));
-            }
-
-            messages.push(
-                `${ck.green("✓")} ${ck.yellow.underline(path)} ${ck.green(`registered as ${ck.cyan(event.data.name)}`)}`
-            );
+            const { name, once, run } = module.data;
+            const listener = (...args: unknown[]) => void run(this, ...(args as never[]));
+            this.registerListener(name, listener, once ?? false);
         }
-
-        console.log(messages.join("\n"));
     }
 
-    private async loadComponents(){
-        const componentsDir = join(__dirname, "../components");
-        const paths = await getFiles(componentsDir);
+    private registerListener(name: string, listener: (...args: unknown[]) => void, once: boolean): void {
+        const emitter = this as unknown as {
+            on: (event: string, listener: (...args: unknown[]) => void) => void;
+            once: (event: string, listener: (...args: unknown[]) => void) => void;
+        };
+        if (once) emitter.once(name, listener);
+        else emitter.on(name, listener);
+    }
 
-        const messages: string[] = [ck.bgGreenBright.black(" Components ")];
-
-        for (const path of paths){
-            const { default: component } = await import(join(componentsDir, path));
-            if (!(component instanceof Component)) {
-                messages.push(ck.italic.yellow(`! "${path}" file is not exporting a`, ck.green("Component")));
-                continue;
-            }
-
-            this.saveComponent(component);
-            messages.push(`${ck.green("✓")} ${ck.greenBright.underline(path)} ${ck.green(`registered as ${ck.cyan(component.data.customId)}`)}`);
-        }        
-        console.log(messages.join("\n"));
-    } 
-
-    private async saveComponent({ data: component }: Component){
-        switch (component.type) {
-            case "Button": this.Buttons.set(component.customId, component);
+    private registerComponent(component: Component): void {
+        switch (component.data.type) {
+            case "Button":
+                this.buttons.set(component.data.customId, component);
                 break;
-            case "StringSelect": this.StringSelects.set(component.customId, component);
+            case "StringSelect":
+                this.selects.set(component.data.customId, component);
                 break;
-            case "RoleSelect": this.RoleSelect.set(component.customId, component);
-                break;
-            case "ChannelSelect": this.ChannelSelects.set(component.customId, component);
-                break;
-            case "UserSelect": this.UserSelects.set(component.customId, component);
-                break;
-            case "MentionableSelect": this.MentionableSelects.set(component.customId, component);
-                break;
-            case "Modal": this.Modals.set(component.customId, component);
+            case "Modal":
+                this.modals.set(component.data.customId, component);
                 break;
         }
     }
-    private async registerListeners(interaction: Interaction){
-        if (interaction.isCommand()) this.onCommand(interaction);
-        if (interaction.isAutocomplete()) this.onAutoComplete(interaction);
+}
 
-        if (interaction.isModalSubmit()){
-            this.Modals.get(interaction.customId)?.run(interaction);
-            return;
-        }
+/** Directory next to the compiled file: src/<name> in dev (tsx) and dist/<name> in prod. */
+function resolveModuleDir(name: string): string {
+    return join(dirname(fileURLToPath(import.meta.url)), "..", name);
+}
 
-        if (interaction.isMessageComponent()){
-            switch(interaction.componentType){
-                case ComponentType.Button: this.Buttons.get(interaction.customId)?.run(interaction);
-                    break;
-                case ComponentType.StringSelect: this.StringSelects.get(interaction.customId)?.run(interaction);
-                    break;
-                case ComponentType.UserSelect: this.UserSelects.get(interaction.customId)?.run(interaction);
-                    break;
-                case ComponentType.RoleSelect: this.RoleSelect.get(interaction.customId)?.run(interaction);
-                    break;
-                case ComponentType.MentionableSelect: this.MentionableSelects.get(interaction.customId)?.run(interaction);
-                    break;
-                case ComponentType.ChannelSelect: this.ChannelSelects.get(interaction.customId)?.run(interaction);
-                    break;
-            }
-            return;
-        }
+function* walk(dir: string): Generator<string> {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) yield* walk(path);
+        else if (/\.(ts|js)$/.test(entry.name) && !entry.name.endsWith(".d.ts")) yield path;
     }
-    private onAutoComplete(autoCompleteInteraction: AutocompleteInteraction) {
-        const command = this.Commands.get(autoCompleteInteraction.commandName);
-        const client = this as ExtendedClient<true>;
-        const interaction = autoCompleteInteraction as AutocompleteInteraction;
-        if (command?.type === ApplicationCommandType.ChatInput && command.autoComplete){
-            command.autoComplete({ client, interaction });
-        }
-    }
-    
-    
-    private async whenReady(client: Client<true>) {
-        const messages: string[] = [];
+}
 
-        messages.push(
-            `${ck.green("✓ Bot online")} ${ck.blue.underline("discord.js")} 📦 ${ck.yellow(version)}`,
-            `${ck.greenBright(`➝ Connected with ${ck.underline(client.user.username)}`)}`
-        );
+async function importDefault(file: string): Promise<unknown> {
+    const module = (await import(pathToFileURL(file).href)) as { default: unknown };
+    return module.default;
+}
 
-        await client.application.commands
-            .set(Array.from(this.Commands.values()))
-            .then((c) => messages.push(`${ck.cyan("⟨ / ⟩")} ${ck.green(`${c.size} commands defined successfully!`)}`))
-            .catch(({ message }: DiscordAPIError) =>
-                messages.push(
-                    brBuilder(
-                        "",
-                        ck.bgRed.white(" ✗ An error occurred while trying to set the commands "),
-                        ck.red("Message:", message)
-                    )
-                )
-            );
-
-        console.log(brBuilder("", ...messages));
-    }
-    */
+function capitalize(value: string): string {
+    return value.charAt(0).toUpperCase() + value.slice(1);
 }

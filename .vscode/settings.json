@@ -1,11 +1,11 @@
 {
     "material-icon-theme.folders.associations": {
         "deprecated": "Archive",
-        "development":"Test",
-        "production":"Dist",
+        "development": "Test",
+        "production": "Dist",
         "staff": "Admin",
         "protection": "Guard",
-        "systems":"Ci",
+        "systems": "Ci",
         "discord": "Client"
     },
     "material-icon-theme.files.associations": {

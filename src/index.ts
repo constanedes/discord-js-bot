@@ -1,16 +1,8 @@
-import { IntentsBitField, Partials } from "discord.js";
-import ExtendedClient from "./client/ExtendedClient.js";
-import client from "./client/ExtendedClient.js";
-import { ENV } from "./consts.js";
+import { ExtendedClient } from "./client/ExtendedClient.js";
 
-function main() {
-    const client = new ExtendedClient();
-    client.login(ENV.DISCORD_TOKEN);
-    console.log("Running...");
-}
+const client = new ExtendedClient();
 
-try {
-    main();
-} catch (error) {
-    console.log(error);
-}
+process.on("SIGINT", () => client.destroy());
+process.on("SIGTERM", () => client.destroy());
+
+await client.start();

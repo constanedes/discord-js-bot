@@ -1,13 +1,12 @@
-/* import { ClientEvents } from "discord.js";
-import ExtendedClient from "../client/index.js";
+import type { ClientEvents } from "discord.js";
+import type { ExtendedClient } from "../client/ExtendedClient.js";
 
-export interface EventData<Key extends keyof ClientEvents> {
-    name: Key,
-    once?: boolean,
-    // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-    run(client: ExtendedClient<true>, ...args: ClientEvents[Key]): any,
+export type EventData<Key extends keyof ClientEvents = keyof ClientEvents> = {
+    name: Key;
+    once?: boolean;
+    run: (client: ExtendedClient, ...args: ClientEvents[Key]) => unknown;
+};
+
+export class Event<Key extends keyof ClientEvents = keyof ClientEvents> {
+    constructor(public readonly data: EventData<Key>) {}
 }
-
-export class Event<Key extends keyof ClientEvents> {
-    constructor(public data: EventData<Key>){}
-} */

@@ -1,0 +1,8 @@
+{
+    "categories": {
+        "correctness": "error",
+        "perf": "warn",
+        "style": "warn"
+    },
+    "ignorePatterns": ["dist/**", "node_modules/**"]
+}
